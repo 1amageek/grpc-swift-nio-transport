@@ -15,7 +15,21 @@
  * limitations under the License.
  */
 
+import Foundation
 import PackageDescription
+
+let manifestDirectoryURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+
+func localOrForkDependency(_ repository: String, localPath: String) -> Package.Dependency {
+  let resolvedLocalPath = URL(fileURLWithPath: localPath, relativeTo: manifestDirectoryURL)
+    .standardizedFileURL
+    .path
+  if FileManager.default.fileExists(atPath: resolvedLocalPath) {
+    return .package(path: resolvedLocalPath)
+  }
+
+  return .package(url: "https://github.com/1amageek/\(repository).git", branch: "main")
+}
 
 let products: [Product] = [
   .library(
@@ -33,30 +47,14 @@ let products: [Product] = [
 ]
 
 let dependencies: [Package.Dependency] = [
-  .package(
-    path: "../grpc-swift-2"
-  ),
-  .package(
-    path: "../swift-nio"
-  ),
-  .package(
-    path: "../swift-nio-http2"
-  ),
-  .package(
-    path: "../swift-nio-transport-services"
-  ),
-  .package(
-    path: "../swift-nio-ssl"
-  ),
-  .package(
-    path: "../swift-nio-extras"
-  ),
-  .package(
-    path: "../swift-certificates"
-  ),
-  .package(
-    path: "../swift-asn1"
-  ),
+  localOrForkDependency("grpc-swift-2", localPath: "../grpc-swift-2"),
+  localOrForkDependency("swift-nio", localPath: "../swift-nio"),
+  localOrForkDependency("swift-nio-http2", localPath: "../swift-nio-http2"),
+  localOrForkDependency("swift-nio-transport-services", localPath: "../swift-nio-transport-services"),
+  localOrForkDependency("swift-nio-ssl", localPath: "../swift-nio-ssl"),
+  localOrForkDependency("swift-nio-extras", localPath: "../swift-nio-extras"),
+  localOrForkDependency("swift-certificates", localPath: "../swift-certificates"),
+  localOrForkDependency("swift-asn1", localPath: "../swift-asn1"),
 ]
 
 // -------------------------------------------------------------------------------------------------
