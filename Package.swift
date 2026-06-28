@@ -15,24 +15,7 @@
  * limitations under the License.
  */
 
-import Foundation
 import PackageDescription
-
-let manifestDirectoryURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-let manifestPath = manifestDirectoryURL.standardizedFileURL.path
-let isDependencyCheckout = manifestPath.contains("/.build/checkouts/")
-  || manifestPath.contains("/SourcePackages/checkouts/")
-
-func localOrForkDependency(_ repository: String, localPath: String) -> Package.Dependency {
-  let resolvedLocalPath = URL(fileURLWithPath: localPath, relativeTo: manifestDirectoryURL)
-    .standardizedFileURL
-    .path
-  if !isDependencyCheckout && FileManager.default.fileExists(atPath: resolvedLocalPath) {
-    return .package(path: resolvedLocalPath)
-  }
-
-  return .package(url: "https://github.com/1amageek/\(repository).git", branch: "main")
-}
 
 let products: [Product] = [
   .library(
@@ -50,14 +33,14 @@ let products: [Product] = [
 ]
 
 let dependencies: [Package.Dependency] = [
-  localOrForkDependency("grpc-swift-2", localPath: "../grpc-swift-2"),
-  localOrForkDependency("swift-nio", localPath: "../swift-nio"),
-  localOrForkDependency("swift-nio-http2", localPath: "../swift-nio-http2"),
-  localOrForkDependency("swift-nio-transport-services", localPath: "../swift-nio-transport-services"),
-  localOrForkDependency("swift-nio-ssl", localPath: "../swift-nio-ssl"),
-  localOrForkDependency("swift-nio-extras", localPath: "../swift-nio-extras"),
-  localOrForkDependency("swift-certificates", localPath: "../swift-certificates"),
-  localOrForkDependency("swift-asn1", localPath: "../swift-asn1"),
+  .package(url: "https://github.com/1amageek/grpc-swift-2.git", branch: "main"),
+  .package(url: "https://github.com/1amageek/swift-nio.git", branch: "main"),
+  .package(url: "https://github.com/1amageek/swift-nio-http2.git", branch: "main"),
+  .package(url: "https://github.com/1amageek/swift-nio-transport-services.git", branch: "main"),
+  .package(url: "https://github.com/1amageek/swift-nio-ssl.git", branch: "main"),
+  .package(url: "https://github.com/1amageek/swift-nio-extras.git", branch: "main"),
+  .package(url: "https://github.com/1amageek/swift-certificates.git", branch: "main"),
+  .package(url: "https://github.com/1amageek/swift-asn1.git", branch: "main"),
 ]
 
 // -------------------------------------------------------------------------------------------------
