@@ -34,36 +34,28 @@ let products: [Product] = [
 
 let dependencies: [Package.Dependency] = [
   .package(
-    url: "https://github.com/grpc/grpc-swift-2.git",
-    from: "2.3.0"
+    path: "../grpc-swift-2"
   ),
   .package(
-    url: "https://github.com/apple/swift-nio.git",
-    from: "2.96.0"
+    path: "../swift-nio"
   ),
   .package(
-    url: "https://github.com/apple/swift-nio-http2.git",
-    from: "1.42.0"
+    path: "../swift-nio-http2"
   ),
   .package(
-    url: "https://github.com/apple/swift-nio-transport-services.git",
-    from: "1.20.0"
+    path: "../swift-nio-transport-services"
   ),
   .package(
-    url: "https://github.com/apple/swift-nio-ssl.git",
-    from: "2.34.0"
+    path: "../swift-nio-ssl"
   ),
   .package(
-    url: "https://github.com/apple/swift-nio-extras.git",
-    from: "1.27.0"
+    path: "../swift-nio-extras"
   ),
   .package(
-    url: "https://github.com/apple/swift-certificates.git",
-    from: "1.14.0"
+    path: "../swift-certificates"
   ),
   .package(
-    url: "https://github.com/apple/swift-asn1.git",
-    from: "1.0.0"
+    path: "../swift-asn1"
   ),
 ]
 
@@ -88,6 +80,17 @@ let defaultSwiftSettings: [SwiftSetting] =
     .enableUpcomingFeature("MemberImportVisibility"),
   ]
 
+let zlibLinkPlatforms: [Platform] = [
+  .macOS,
+  .macCatalyst,
+  .iOS,
+  .watchOS,
+  .tvOS,
+  .visionOS,
+  .linux,
+  .android,
+]
+
 // -------------------------------------------------------------------------------------------------
 
 let targets: [Target] = [
@@ -96,7 +99,7 @@ let targets: [Target] = [
     name: "CGRPCNIOTransportZlib",
     dependencies: [],
     linkerSettings: [
-      .linkedLibrary("z")
+      .linkedLibrary("z", .when(platforms: zlibLinkPlatforms))
     ]
   ),
 

@@ -29,7 +29,7 @@ extension GRPCNIOTransportCore.SocketAddress {
 
     case .v6(let address):
       var host = address.host
-      #if !os(Windows)
+      #if !os(Windows) && !os(WASI)
       // NIO only includes the scope in `host` when the address was created from a
       // string (via init(ipAddress:port:)). Addresses created from a raw sockaddr_in6
       // (e.g. accepted connections) use inet_ntop which drops the scope ID.

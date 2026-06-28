@@ -22,6 +22,8 @@ import Android
 import Glibc
 #elseif canImport(Musl)
 import Musl
+#elseif canImport(WASILibc)
+import WASILibc
 #endif
 
 // On Linux, MemberImportVisibility requires importing CNIOLinux to access
@@ -30,7 +32,7 @@ import Musl
 import CNIOLinux
 #endif
 
-#if !os(Windows)
+#if !os(Windows) && !os(WASI)
 /// Resolves an IPv6 scope ID to its interface name.
 /// - Parameter scopeID: The numeric scope ID from `sin6_scope_id`
 /// - Returns: The interface name (e.g., "eth0"), or `nil` if resolution fails

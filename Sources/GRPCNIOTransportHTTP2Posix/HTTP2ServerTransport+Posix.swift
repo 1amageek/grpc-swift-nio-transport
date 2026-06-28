@@ -16,15 +16,153 @@
 
 public import GRPCCore
 public import GRPCNIOTransportCore  // should be @usableFromInline
-internal import NIOCore
+public import NIOCore
 internal import NIOExtras
 internal import NIOHTTP2
+#if !os(WASI)
 public import NIOPosix  // has to be public because of default argument value in init
+#endif
 private import NIOSSL
 private import SwiftASN1
 private import Synchronization
 public import X509
 
+#if os(WASI)
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension HTTP2ServerTransport {
+  /// A placeholder Posix server transport for WASI builds.
+  public struct Posix: ServerTransport, ListeningServerTransport {
+    public typealias Bytes = GRPCNIOTransportBytes
+
+    public var listeningAddress: GRPCNIOTransportCore.SocketAddress {
+      get async throws {
+        throw RuntimeError(
+          code: .transportError,
+          message: "HTTP/2 Posix server transport is unavailable on WASI."
+        )
+      }
+    }
+
+    public init(
+      address: GRPCNIOTransportCore.SocketAddress,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
+      eventLoopGroup: (any EventLoopGroup)? = nil
+    ) {}
+
+    @available(gRPCSwiftNIOTransport 2.6, *)
+    public init(
+      listeningSocketDescriptor fileDescriptor: Int,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
+      eventLoopGroup: (any EventLoopGroup)? = nil
+    ) {}
+
+    public func configure(context: GRPCServerContext) {}
+
+    public func listen(
+      streamHandler:
+        @escaping @Sendable (
+          _ stream: RPCStream<Inbound, Outbound>,
+          _ context: ServerContext
+        ) async -> Void
+    ) async throws {
+      throw RuntimeError(
+        code: .transportError,
+        message: "HTTP/2 Posix server transport is unavailable on WASI."
+      )
+    }
+
+    public func beginGracefulShutdown() {}
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension HTTP2ServerTransport.Posix {
+  public struct Context: ServerContext.TransportSpecific {
+    public var peerCertificate: Certificate?
+
+    @available(gRPCSwiftNIOTransport 2.2, *)
+    public var peerCertificateChain: X509.ValidatedCertificateChain?
+
+    public init() {}
+  }
+
+  public struct Config: Sendable {
+    public var compression: HTTP2ServerTransport.Config.Compression
+    public var connection: HTTP2ServerTransport.Config.Connection
+    public var http2: HTTP2ServerTransport.Config.HTTP2
+    public var rpc: HTTP2ServerTransport.Config.RPC
+    public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+
+    public init(
+      http2: HTTP2ServerTransport.Config.HTTP2,
+      rpc: HTTP2ServerTransport.Config.RPC,
+      connection: HTTP2ServerTransport.Config.Connection,
+      compression: HTTP2ServerTransport.Config.Compression,
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+    ) {
+      self.compression = compression
+      self.connection = connection
+      self.http2 = http2
+      self.rpc = rpc
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
+    }
+
+    public static var defaults: Self {
+      Self.defaults()
+    }
+
+    public static func defaults(
+      configure: (_ config: inout Self) -> Void = { _ in }
+    ) -> Self {
+      var config = Self(
+        http2: .defaults,
+        rpc: .defaults,
+        connection: .defaults,
+        compression: .defaults,
+        channelDebuggingCallbacks: .defaults
+      )
+      configure(&config)
+      return config
+    }
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension ServerTransport where Self == HTTP2ServerTransport.Posix {
+  public static func http2NIOPosix(
+    address: GRPCNIOTransportCore.SocketAddress,
+    transportSecurity: HTTP2ServerTransport.Posix.TransportSecurity,
+    config: HTTP2ServerTransport.Posix.Config = .defaults,
+    eventLoopGroup: (any EventLoopGroup)? = nil
+  ) -> Self {
+    HTTP2ServerTransport.Posix(
+      address: address,
+      transportSecurity: transportSecurity,
+      config: config,
+      eventLoopGroup: eventLoopGroup
+    )
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.6, *)
+extension ServerTransport where Self == HTTP2ServerTransport.Posix {
+  public static func http2NIOPosix(
+    listeningSocketDescriptor fileDescriptor: Int,
+    transportSecurity: HTTP2ServerTransport.Posix.TransportSecurity,
+    config: HTTP2ServerTransport.Posix.Config = .defaults,
+    eventLoopGroup: (any EventLoopGroup)? = nil
+  ) -> Self {
+    HTTP2ServerTransport.Posix(
+      listeningSocketDescriptor: fileDescriptor,
+      transportSecurity: transportSecurity,
+      config: config,
+      eventLoopGroup: eventLoopGroup
+    )
+  }
+}
+#else
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport {
   /// A `ServerTransport` using HTTP/2 built on top of `NIOPosix`.
@@ -466,3 +604,4 @@ extension ServerTransport where Self == HTTP2ServerTransport.Posix {
     )
   }
 }
+#endif

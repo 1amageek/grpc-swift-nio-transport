@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#if canImport(Dispatch)
 private import Dispatch
+#endif
 
 #if canImport(Darwin)
 private import Darwin
@@ -24,6 +26,8 @@ private import Android
 private import Glibc
 #elseif canImport(Musl)
 private import Musl
+#elseif canImport(WASILibc)
+private import WASILibc
 #else
 #error("The GRPCNIOTransportCore module was unable to identify your C library.")
 #endif
@@ -31,14 +35,19 @@ private import Musl
 /// An asynchronous non-blocking DNS resolver built on top of the libc `getaddrinfo` function.
 @available(gRPCSwiftNIOTransport 2.0, *)
 package enum DNSResolver {
+  #if !os(WASI)
   private static let dispatchQueue = DispatchQueue(
     label: "io.grpc.DNSResolver"
   )
+  #endif
 
   /// Resolves a hostname and port number to a list of socket addresses. This method is non-blocking.
   package static func resolve(host: String, port: Int) async throws -> [SocketAddress] {
     try Task.checkCancellation()
 
+    #if os(WASI)
+    throw Self.GetAddrInfoError(code: 0)
+    #else
     return try await withCheckedThrowingContinuation { continuation in
       Self.dispatchQueue.async {
         do {
@@ -49,8 +58,10 @@ package enum DNSResolver {
         }
       }
     }
+    #endif
   }
 
+  #if !os(WASI)
   /// Resolves a hostname and port number to a list of socket addresses.
   ///
   /// Calls to `getaddrinfo` are blocking and this method calls `getaddrinfo` directly. Hence, this method is also blocking.
@@ -138,6 +149,7 @@ package enum DNSResolver {
       }
     }
   }
+  #endif
 }
 
 @available(gRPCSwiftNIOTransport 2.0, *)
@@ -147,7 +159,11 @@ extension DNSResolver {
     package let description: String
 
     package init(code: CInt) {
+      #if os(WASI)
+      self.description = "DNS resolution is unavailable on WASI"
+      #else
       self.description = String(validatingCString: gai_strerror(code)) ?? "Unknown error: \(code)"
+      #endif
     }
   }
 }
@@ -164,6 +180,7 @@ extension DNSResolver {
   }
 }
 
+#if !os(WASI)
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.IPv4 {
   fileprivate init(_ address: sockaddr_in) throws {
@@ -200,3 +217,4 @@ extension SocketAddress.IPv6 {
     self = .init(host: host, port: Int(in_port_t(bigEndian: address.sin6_port)))
   }
 }
+#endif

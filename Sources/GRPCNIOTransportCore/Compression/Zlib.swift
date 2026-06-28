@@ -14,9 +14,57 @@
  * limitations under the License.
  */
 
-internal import CGRPCNIOTransportZlib
 internal import GRPCCore
 internal import NIOCore
+
+#if os(WASI)
+@available(gRPCSwiftNIOTransport 2.0, *)
+enum Zlib {
+  enum Method {
+    case deflate
+    case gzip
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension Zlib {
+  struct Compressor {
+    init(method: Method) {}
+
+    @discardableResult
+    func compress(_ input: ByteBuffer, into output: inout ByteBuffer) throws(ZlibError) -> Int {
+      throw ZlibError(code: 0, message: "zlib is unavailable on WASI")
+    }
+
+    func end() {}
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension Zlib {
+  struct Decompressor {
+    init(method: Method) {}
+
+    func decompress(_ input: inout ByteBuffer, limit: Int) throws -> ByteBuffer {
+      throw ZlibError(code: 0, message: "zlib is unavailable on WASI")
+    }
+
+    func end() {}
+  }
+}
+
+struct ZlibError: Error, Hashable {
+  var code: Int
+  var message: String
+
+  init(code: Int, message: String) {
+    self.code = code
+    self.message = message
+  }
+}
+
+#else
+internal import CGRPCNIOTransportZlib
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 enum Zlib {
@@ -427,3 +475,4 @@ extension UnsafeMutablePointer<z_stream> {
     }
   }
 }
+#endif

@@ -19,6 +19,7 @@ internal import GRPCNIOTransportCore
 internal import NIOCore
 internal import NIOPosix
 
+#if !os(WASI)
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientBootstrap {
   func connect<Result: Sendable>(
@@ -54,3 +55,4 @@ extension NIOPosix.VsockAddress {
     )
   }
 }
+#endif
